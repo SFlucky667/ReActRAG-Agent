@@ -20,9 +20,52 @@ class AgentState(TypedDict):
     step:str
 
 #2.天气查询工具
+def get_weather(city:str)->str:
+    city_coords={
+        "哈尔滨": (45.75, 126.65),
+        "北京": (39.90, 116.40),
+        "上海": (31.23, 121.47),
+        "广州": (23.13, 113.26),
+        "深圳": (22.54, 114.05),
+    }
 
+    if city not in city_coords:
+        return f"暂不支持查询【{city}】的天气"
+    # 发请求
+    lat,lon=city_coords[city]
+    url = "https://api.open-meteo.com/v1/forecast"
+    params={
+        "latitude": lat,
+        "longitude": lon,
+        "current_weather": True,
+    }
+
+    try:
+        resp=requests.get(url,params=params,timeout=5)
+        resp.raise_for_status()
+        data=resp.json() # 将resp的json文本解析成python字典
+        current = data.get("current_weather", {})
+        temp = current.get("temperature")
+        windspeed = current.get("windspeed")
+        weathercode = current.get("weathercode")
+        return (
+            f"{city}当前天气：温度{temp}℃，"
+            f"风速{windspeed}km/h，天气代码{weathercode}"
+        )
+    except Exception as e:
+        return f"查询失败：{str(e)}"
 
 #3.计算器工具
+def calculator(expression:str)->str:
+    allowed = set("0123456789+-*/(). ")
+    if not all(c in allowed for c in expression):
+        return "错误：表达式包含不允许的字符"
+    try:
+        result=eval(expression)
+        return f"{expression}={result}"
+    except Exception as e:
+        return f"计算失败：{str(e)}"
+
 
 #4.初始化模型
 llm = ChatOpenAI(
